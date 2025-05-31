@@ -8,14 +8,21 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var locationManager = LocationManager()
+    @StateObject private var gameManager = GameManager()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            switch gameManager.gameState.phase {
+            case .setup, .locationSetup:
+                LocationSetupView(locationManager: locationManager, gameManager: gameManager)
+            case .playing:
+                GameView(gameManager: gameManager)
+            case .results:
+                ResultsView(gameManager: gameManager)
+            }
         }
-        .padding()
+        .preferredColorScheme(nil) // Supports both light and dark mode
     }
 }
 
