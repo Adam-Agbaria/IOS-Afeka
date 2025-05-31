@@ -198,15 +198,35 @@ struct LocationRequestView: View {
                 locationManager.requestLocationPermission()
             }) {
                 HStack {
-                    Image(systemName: "location.circle")
-                    Text("Detect Location")
+                    if locationManager.isLoading {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .foregroundColor(.white)
+                        Text("Detecting Location...")
+                    } else {
+                        Image(systemName: "location.circle")
+                        Text("Detect Location")
+                    }
                 }
                 .font(.headline)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.blue)
+                .background(locationManager.isLoading ? Color.gray : Color.blue)
                 .cornerRadius(12)
+            }
+            .disabled(locationManager.isLoading)
+            
+            // Status indicator
+            if locationManager.isLoading {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                    Text("Requesting location permission and GPS coordinates...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal)
             }
         }
     }
