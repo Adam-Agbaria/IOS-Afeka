@@ -6,123 +6,117 @@
 //
 
 import Foundation
+import Combine
 
-enum GamePhase {
-    case setup
-    case locationSetup
-    case playing
-    case results
+enum GamePhase: String, CaseIterable {
+    case setup = "setup"
+    case locationSetup = "locationSetup"
+    case playing = "playing"
+    case results = "results"
 }
 
-enum BattleResult {
-    case player1Wins
-    case player2Wins
-    case tie
+enum BattleResult: String, CaseIterable {
+    case player1Wins = "player1Wins"
+    case player2Wins = "player2Wins"
+    case tie = "tie"
 }
 
-struct GameRound {
+struct GameRound: Identifiable {
+    let id = UUID()
     let roundNumber: Int
     let player1Card: Card
     let player2Card: Card
     let result: BattleResult
-    
-    init(roundNumber: Int, player1Card: Card, player2Card: Card) {
-        self.roundNumber = roundNumber
-        self.player1Card = player1Card
-        self.player2Card = player2Card
-        
-        if player1Card.strength > player2Card.strength {
-            self.result = .player1Wins
-        } else if player2Card.strength > player1Card.strength {
-            self.result = .player2Wins
-        } else {
-            self.result = .tie // Ties go to the house
-        }
-    }
 }
 
 class GameState: ObservableObject {
     @Published var phase: GamePhase = .setup
     @Published var player1: Player?
     @Published var player2: Player?
-    @Published var currentRound: Int = 0
-    @Published var rounds: [GameRound] = []
-    @Published var deck: [Card] = []
-    @Published var isGameActive: Bool = false
     @Published var currentPlayer1Card: Card?
     @Published var currentPlayer2Card: Card?
+    @Published var currentRound: Int = 0
+    @Published var maxRounds: Int = 10
+    @Published var rounds: [GameRound] = []
+    @Published var isGameActive: Bool = false
     
-    let maxRounds = 10
+    private var deck: [Card] = []
+    private var usedCards: [Card] = []
     
     init() {
         resetGame()
+    }
+    
+    func startGame() {
+        guard player1 != nil && player2 != nil else { return }
+        isGameActive = true
+        currentRound = 0
+        rounds = []
+        deck = Card.createDeck()
+        usedCards = []
+        
+        // Reset player scores
+        player1?.score = 0
+        player2?.score = 0
+    }
+    
+    func playRound() -> GameRound? {
+        guard isGameActive && currentRound < maxRounds else { return nil }
+        guard deck.count >= 2 else { return nil }
+        
+        currentRound += 1
+        
+        // Draw cards for both players
+        let player1Card = deck.removeFirst()
+        let player2Card = deck.removeFirst()
+        
+        currentPlayer1Card = player1Card
+        currentPlayer2Card = player2Card
+        
+        // Determine winner
+        let result: BattleResult
+        if player1Card.strength > player2Card.strength {
+            result = .player1Wins
+            player1?.score += 1
+        } else if player2Card.strength > player1Card.strength {
+            result = .player2Wins
+            player2?.score += 1
+        } else {
+            result = .tie
+            // Ties go to "house" - no points awarded
+        }
+        
+        // Create round record
+        let round = GameRound(
+            roundNumber: currentRound,
+            player1Card: player1Card,
+            player2Card: player2Card,
+            result: result
+        )
+        
+        rounds.append(round)
+        usedCards.append(contentsOf: [player1Card, player2Card])
+        
+        // Check if game is over
+        if currentRound >= maxRounds {
+            isGameActive = false
+            phase = .results
+        }
+        
+        return round
     }
     
     func resetGame() {
         phase = .setup
         player1 = nil
         player2 = nil
-        currentRound = 0
-        rounds = []
-        deck = Card.createDeck()
-        isGameActive = false
         currentPlayer1Card = nil
         currentPlayer2Card = nil
-    }
-    
-    func startGame() {
-        guard let p1 = player1, let p2 = player2 else { return }
-        
-        deck = Card.createDeck()
         currentRound = 0
         rounds = []
-        isGameActive = true
-        phase = .playing
-        
-        // Reset scores
-        player1?.score = 0
-        player2?.score = 0
-    }
-    
-    func playRound() -> GameRound? {
-        guard isGameActive,
-              currentRound < maxRounds,
-              deck.count >= 2 else {
-            return nil
-        }
-        
-        let card1 = deck.removeFirst()
-        let card2 = deck.removeFirst()
-        
-        currentPlayer1Card = card1
-        currentPlayer2Card = card2
-        
-        currentRound += 1
-        let round = GameRound(roundNumber: currentRound, player1Card: card1, player2Card: card2)
-        rounds.append(round)
-        
-        // Update scores
-        switch round.result {
-        case .player1Wins:
-            player1?.incrementScore()
-        case .player2Wins:
-            player2?.incrementScore()
-        case .tie:
-            // Ties go to the house (no score)
-            break
-        }
-        
-        // Check if game is over
-        if currentRound >= maxRounds {
-            endGame()
-        }
-        
-        return round
-    }
-    
-    func endGame() {
         isGameActive = false
-        phase = .results
+        deck = []
+        usedCards = []
     }
     
     func getWinner() -> Player? {
@@ -133,7 +127,7 @@ class GameState: ObservableObject {
         } else if p2.score > p1.score {
             return p2
         } else {
-            return nil // It's a tie
+            return nil // Tie
         }
     }
 } 

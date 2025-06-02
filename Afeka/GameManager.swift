@@ -17,6 +17,7 @@ class GameManager: ObservableObject {
     private var gameTimer: Timer?
     private var countdownTimer: Timer?
     private let cardFlipInterval: TimeInterval = 5.0
+    private let soundManager = SoundManager.shared
     
     init() {
         // Set up automatic AI opponent for single player mode
@@ -46,6 +47,7 @@ class GameManager: ObservableObject {
         guard gameState.player1 != nil && gameState.player2 != nil else { return }
         
         gameState.startGame()
+        soundManager.playGameStartSound()
         startGameTimer()
     }
     
@@ -86,13 +88,41 @@ class GameManager: ObservableObject {
             return
         }
         
+        // Play card flip sound
+        soundManager.playCardFlipSound()
+        
         let round = gameState.playRound()
+        
+        // Play sound based on round result for the human player
+        if let round = round, let player1 = gameState.player1 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                switch round.result {
+                case .player1Wins:
+                    self?.soundManager.playRoundResult(playerWon: true, isTie: false)
+                case .player2Wins:
+                    self?.soundManager.playRoundResult(playerWon: false, isTie: false)
+                case .tie:
+                    self?.soundManager.playRoundResult(playerWon: false, isTie: true)
+                }
+            }
+        }
         
         if round == nil || gameState.currentRound >= gameState.maxRounds {
             stopGameTimer()
+            
+            // Play game end sound
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.playGameEndSound()
+            }
         } else {
             timeUntilNextFlip = Int(cardFlipInterval)
         }
+    }
+    
+    private func playGameEndSound() {
+        guard let player1 = gameState.player1, let player2 = gameState.player2 else { return }
+        let playerWon = player1.score > player2.score
+        soundManager.playGameEndSound(playerWon: playerWon)
     }
     
     func stopGameTimer() {
@@ -106,16 +136,19 @@ class GameManager: ObservableObject {
     
     func pauseGame() {
         stopGameTimer()
+        soundManager.pauseBackgroundMusic()
     }
     
     func resumeGame() {
         if gameState.isGameActive && gameState.currentRound < gameState.maxRounds {
             startGameTimer()
+            soundManager.resumeBackgroundMusic()
         }
     }
     
     func resetGame() {
         stopGameTimer()
+        soundManager.stopBackgroundMusic()
         gameState.resetGame()
         setupAIOpponent()
     }

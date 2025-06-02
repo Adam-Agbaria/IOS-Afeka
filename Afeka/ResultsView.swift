@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ResultsView: View {
     @ObservedObject var gameManager: GameManager
-    @State private var showingDetails: Bool = false
+    @State private var showDetails: Bool = false
     
     var body: some View {
         NavigationView {
@@ -26,30 +26,25 @@ struct ResultsView: View {
                     
                     // Round Details Toggle
                     Button(action: {
-                        withAnimation {
-                            showingDetails.toggle()
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showDetails.toggle()
                         }
                     }) {
                         HStack {
-                            Text("Round Details")
+                            Text(showDetails ? "Hide Details" : "Show Round Details")
                                 .font(.headline)
-                                .fontWeight(.semibold)
-                            
-                            Spacer()
-                            
-                            Image(systemName: showingDetails ? "chevron.up" : "chevron.down")
-                                .font(.headline)
+                            Image(systemName: showDetails ? "chevron.up" : "chevron.down")
                         }
                         .foregroundColor(.blue)
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.blue.opacity(0.1))
                         .cornerRadius(12)
                     }
                     
-                    // Round Details
-                    if showingDetails {
+                    // Round by Round Details
+                    if showDetails {
                         RoundDetailsView(gameManager: gameManager)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            .transition(.scale.combined(with: .opacity))
                     }
                     
                     // Action Buttons
@@ -58,7 +53,7 @@ struct ResultsView: View {
                 .padding()
             }
             .navigationTitle("Game Results")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 }
@@ -68,12 +63,11 @@ struct WinnerAnnouncementView: View {
     
     var body: some View {
         VStack(spacing: 15) {
-            // Trophy or Tie Icon
+            // Winner Icon
             Image(systemName: winnerIcon)
                 .font(.system(size: 80))
                 .foregroundColor(winnerColor)
-                .scaleEffect(1.0)
-                .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: UUID())
+                .scaleEffect(1.2)
             
             // Winner Text
             Text(winnerText)
@@ -83,31 +77,40 @@ struct WinnerAnnouncementView: View {
                 .multilineTextAlignment(.center)
             
             // Subtitle
-            Text(subtitleText)
-                .font(.headline)
+            Text(winnerSubtitle)
+                .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(winnerColor.opacity(0.1))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 20)
                         .stroke(winnerColor.opacity(0.3), lineWidth: 2)
                 )
         )
     }
     
     private var winner: Player? {
-        gameManager.gameState.getWinner()
+        guard let player1 = gameManager.gameState.player1,
+              let player2 = gameManager.gameState.player2 else { return nil }
+        
+        if player1.score > player2.score {
+            return player1
+        } else if player2.score > player1.score {
+            return player2
+        } else {
+            return nil // Tie
+        }
     }
     
     private var winnerIcon: String {
         if winner != nil {
             return "crown.fill"
         } else {
-            return "equal.circle.fill"
+            return "handshake.fill"
         }
     }
     
@@ -121,17 +124,19 @@ struct WinnerAnnouncementView: View {
     
     private var winnerText: String {
         if let winner = winner {
-            return "🎉 \(winner.name) Wins! 🎉"
+            return "\(winner.name) Wins!"
         } else {
-            return "🤝 It's a Tie! 🤝"
+            return "It's a Tie!"
         }
     }
     
-    private var subtitleText: String {
+    private var winnerSubtitle: String {
         if let winner = winner {
-            return "\(winner.side.displayName) Side Victory"
+            let score1 = gameManager.gameState.player1?.score ?? 0
+            let score2 = gameManager.gameState.player2?.score ?? 0
+            return "Final Score: \(score1) - \(score2)"
         } else {
-            return "Both players performed equally well"
+            return "Both players performed equally well!"
         }
     }
 }
@@ -140,33 +145,33 @@ struct FinalScoresView: View {
     @ObservedObject var gameManager: GameManager
     
     var body: some View {
-        VStack(spacing: 15) {
-            Text("Final Scores")
-                .font(.title2)
-                .fontWeight(.bold)
+        HStack(spacing: 30) {
+            // Player 1 Score
+            PlayerScoreCard(
+                player: gameManager.gameState.player1,
+                isWinner: (gameManager.gameState.player1?.score ?? 0) > (gameManager.gameState.player2?.score ?? 0)
+            )
             
-            HStack(spacing: 20) {
-                // Player 1 Score
-                PlayerScoreCard(
-                    player: gameManager.gameState.player1,
-                    isWinner: gameManager.gameState.getWinner()?.id == gameManager.gameState.player1?.id
-                )
-                
-                // VS
-                VStack {
-                    Text("VS")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Player 2 Score
-                PlayerScoreCard(
-                    player: gameManager.gameState.player2,
-                    isWinner: gameManager.gameState.getWinner()?.id == gameManager.gameState.player2?.id
-                )
+            // VS
+            VStack {
+                Image(systemName: "bolt.fill")
+                    .font(.title)
+                    .foregroundColor(.yellow)
+                Text("VS")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.secondary)
             }
+            
+            // Player 2 Score
+            PlayerScoreCard(
+                player: gameManager.gameState.player2,
+                isWinner: (gameManager.gameState.player2?.score ?? 0) > (gameManager.gameState.player1?.score ?? 0)
+            )
         }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(15)
     }
 }
 
@@ -176,37 +181,44 @@ struct PlayerScoreCard: View {
     
     var body: some View {
         VStack(spacing: 10) {
-            if let player = player {
-                Text(player.name)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(player.side == .east ? .blue : .red)
-                
-                Text("(\(player.side.displayName))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                Text("\(player.score)")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundColor(player.side == .east ? .blue : .red)
-                
-                if isWinner {
-                    Image(systemName: "crown.fill")
-                        .font(.title2)
-                        .foregroundColor(.yellow)
-                }
+            // Winner crown
+            if isWinner {
+                Image(systemName: "crown.fill")
+                    .font(.title3)
+                    .foregroundColor(.yellow)
+            } else {
+                Spacer()
+                    .frame(height: 20)
             }
+            
+            // Player name
+            Text(player?.name ?? "Unknown")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(player?.side == .east ? .blue : .red)
+            
+            // Side
+            Text("(\(player?.side.displayName ?? "Unknown") Side)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            // Score
+            Text("\(player?.score ?? 0)")
+                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .foregroundColor(isWinner ? .green : .primary)
+            
+            Text("Rounds Won")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(
+        .background(isWinner ? Color.green.opacity(0.1) : Color.clear)
+        .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isWinner ? Color.yellow.opacity(0.1) : Color(.systemGray6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(isWinner ? Color.yellow : Color.clear, lineWidth: 2)
-                )
+                .stroke(isWinner ? Color.green : Color.clear, lineWidth: 2)
         )
+        .cornerRadius(12)
     }
 }
 
@@ -214,10 +226,10 @@ struct GameStatisticsView: View {
     @ObservedObject var gameManager: GameManager
     
     var body: some View {
-        VStack(spacing: 15) {
+        VStack(alignment: .leading, spacing: 15) {
             Text("Game Statistics")
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.headline)
+                .fontWeight(.semibold)
             
             LazyVGrid(columns: [
                 GridItem(.flexible()),
@@ -380,37 +392,20 @@ struct ActionButtonsView: View {
     @ObservedObject var gameManager: GameManager
     
     var body: some View {
-        VStack(spacing: 15) {
-            Button(action: {
-                gameManager.resetGame()
-            }) {
-                HStack {
-                    Image(systemName: "arrow.clockwise.circle.fill")
-                    Text("Play Again")
-                }
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .cornerRadius(12)
+        Button(action: {
+            gameManager.resetGame()
+        }) {
+            HStack {
+                Image(systemName: "arrow.clockwise.circle.fill")
+                Text("Play Again")
             }
-            
-            Button(action: {
-                gameManager.gameState.phase = .setup
-            }) {
-                HStack {
-                    Image(systemName: "house.circle.fill")
-                    Text("Return to Setup")
-                }
-                .font(.headline)
-                .foregroundColor(.blue)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(12)
-            }
+            .font(.title2)
+            .fontWeight(.semibold)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.blue)
+            .cornerRadius(12)
         }
     }
 }

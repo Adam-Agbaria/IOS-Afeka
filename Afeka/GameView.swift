@@ -14,20 +14,14 @@ struct GameView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                // Game Header
-                GameHeaderView(gameManager: gameManager)
-                
-                // Round Counter and Timer
+                // Game Timer and Progress
                 GameTimerView(gameManager: gameManager)
+                
+                // Score Display
+                ScoreDisplayView(gameManager: gameManager)
                 
                 // Cards Display
                 CardsDisplayView(gameManager: gameManager, cardFlipAnimation: $cardFlipAnimation)
-                
-                // Score Board
-                ScoreBoardView(gameManager: gameManager)
-                
-                // Recent Rounds
-                RecentRoundsView(gameManager: gameManager)
                 
                 Spacer()
                 
@@ -37,18 +31,10 @@ struct GameView: View {
             .padding()
             .navigationTitle("Card Battle")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Reset") {
-                        gameManager.resetGame()
-                    }
-                    .foregroundColor(.red)
+            .onReceive(gameManager.$gameState) { _ in
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                    cardFlipAnimation.toggle()
                 }
-            }
-        }
-        .onReceive(gameManager.gameState.$currentRound) { _ in
-            withAnimation(.easeInOut(duration: 0.5)) {
-                cardFlipAnimation.toggle()
             }
         }
     }
