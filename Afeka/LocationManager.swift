@@ -78,12 +78,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             self.locationError = nil
         }
         
-        // Use async location request to avoid blocking main thread
-        DispatchQueue.global(qos: .userInitiated).async {
-            DispatchQueue.main.async {
-                self.locationManager.requestLocation()
-            }
-        }
+        // Request location directly without wrapping in dispatch queues
+        // The CLLocationManager already handles threading properly
+        locationManager.requestLocation()
     }
     
     func determineSide() -> PlayerSide? {
@@ -128,13 +125,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             switch self.authorizationStatus {
             case .authorizedWhenInUse, .authorizedAlways:
                 print("Location authorized, requesting location...")
-                self.requestLocation()
+                // Only request location if we're currently loading
+                if self.isLoading {
+                    self.requestLocation()
+                }
             case .denied, .restricted:
                 self.locationError = "Location access denied. Please enable location access in Settings."
                 self.isLoading = false
             case .notDetermined:
                 print("Location authorization not determined")
-                self.isLoading = false
+                // Don't set isLoading to false here, let the permission request complete
             @unknown default:
                 self.locationError = "Unknown location authorization status."
                 self.isLoading = false
