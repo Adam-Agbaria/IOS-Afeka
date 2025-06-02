@@ -397,7 +397,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Afeka/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = Afeka/Info.plist;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs location access to determine your side (East/West) for the card game based on your GPS coordinates.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app needs location access to determine your side (East/West) for the card game based on your GPS coordinates.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -425,7 +427,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Afeka/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = Afeka/Info.plist;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs location access to determine your side (East/West) for the card game based on your GPS coordinates.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app needs location access to determine your side (East/West) for the card game based on your GPS coordinates.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
