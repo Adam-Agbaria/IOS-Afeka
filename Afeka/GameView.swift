@@ -125,6 +125,76 @@ struct GameTimerView: View {
     }
 }
 
+struct ScoreDisplayView: View {
+    @ObservedObject var gameManager: GameManager
+    
+    var body: some View {
+        HStack(spacing: 20) {
+            // Player 1 Score
+            if let player1 = gameManager.gameState.player1 {
+                VStack(spacing: 5) {
+                    Text(player1.name)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(player1.side == .east ? .blue : .red)
+                    
+                    VStack(spacing: 2) {
+                        Text("Score")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("\(player1.score)")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(player1.side == .east ? .blue : .red)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
+            
+            Spacer()
+            
+            // VS Symbol with overall game info
+            VStack(spacing: 5) {
+                Image(systemName: "trophy.fill")
+                    .font(.title2)
+                    .foregroundColor(.yellow)
+                
+                Text("VS")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            // Player 2 Score
+            if let player2 = gameManager.gameState.player2 {
+                VStack(spacing: 5) {
+                    Text(player2.name)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(player2.side == .east ? .blue : .red)
+                    
+                    VStack(spacing: 2) {
+                        Text("Score")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("\(player2.score)")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(player2.side == .east ? .blue : .red)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
+        }
+    }
+}
+
 struct CardsDisplayView: View {
     @ObservedObject var gameManager: GameManager
     @Binding var cardFlipAnimation: Bool
