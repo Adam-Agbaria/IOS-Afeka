@@ -175,6 +175,13 @@ This project was developed for the iOS Development course at Afeka College of En
 - Sound effects and background music
 - Achievement system
 
+  ## HERE IS A VIDEO DISPLAY OF THE APP BUT NOTE THAT THERE IS NO SOUND IN THE VIDEO BECAUSE OF VMWARE ISSUES
+  ## **BUT IN REALITY THERE ARE SOUNDS IN THE GAME**
+
+
+https://github.com/user-attachments/assets/a234ef5b-b327-4e8f-9e26-c2dd836cf448
+
+
 ---
 
 **Developed for iOS-Afeka Course Project**
